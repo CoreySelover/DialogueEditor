@@ -1,4 +1,4 @@
-TreeView.DialoguePicker {
+TreeView.DialogueTree {
     ItemHeight = 19;
     Size = (15%, 100%);
     TextSize = 13;
