@@ -1,6 +1,6 @@
 TreeView.DialogueTree {
     ItemHeight = 19;
-    Size = (15%, 100%);
+    Size = (17.08%, 100%);
     TextSize = 13;
 
     Renderer {
@@ -24,6 +24,14 @@ TreeView.DialogueTree {
             ArrowBackgroundColorHover = white;
             ArrowColor = #3C3C3C;
             ArrowColorHover = black;
+            TextureArrowDown = None;
+            TextureArrowDownHover = None;
+            TextureArrowUp = None;
+            TextureArrowUpHover = None;
+            TextureThumb = None;
+            TextureThumbHover = None;
+            TextureTrack = None;
+            TextureTrackHover = None;
             ThumbColor = #DCDCDC;
             ThumbColorHover = #E6E6E6;
             TrackColor = #F5F5F5;

@@ -9,6 +9,47 @@
 sf::RenderWindow window(sf::VideoMode(1920, 1080), "Dialogue Editor");
 tgui::Gui gui{ window };
 
+void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
+    std::string nodeName = node.name();
+
+    if (nodeName == "Dialogue") {
+        std::string dId = node.attribute("id").as_string();
+        context.push_back(dId);
+        tree->addItem(context);
+
+        // Recursively process child nodes
+        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
+            processNode(child, context, tree);
+        }
+
+    }
+    else if (nodeName == "Text") {
+        std::string id = node.attribute("id").as_string();
+        std::string portrait = node.attribute("portrait").as_string();
+        context.push_back(id);
+        tree->addItem(context);
+
+        // Recursively process child nodes
+        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
+            processNode(child, context, tree);
+        }
+
+    }
+    else if (nodeName == "Choice") {
+        std::string choiceText = node.text().as_string();
+        // Remove line breaks
+        choiceText.erase(std::remove(choiceText.begin(), choiceText.end(), '\n'), choiceText.end());
+        context.push_back(choiceText);
+        tree->addItem(context);
+
+        // Recursively process child nodes
+        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
+            processNode(child, context, tree);
+        }
+    }
+}
+
+
 void loadFile(std::string filename)
 {
 	pugi::xml_document doc;
@@ -19,16 +60,8 @@ void loadFile(std::string filename)
     if (result) {
         // load each dialogue
         for (pugi::xml_node dialogue = doc.child("Dialogue"); dialogue; dialogue = dialogue.next_sibling("Dialogue")) {
-
-            std::string dId = dialogue.attribute("id").as_string();
-            tree->addItem({ dId });
-
-            // text
-            for (pugi::xml_node text = dialogue.child("Text"); text; text = text.next_sibling("Text")) {
-                std::string id = text.attribute("id").as_string();
-                std::string portrait = text.attribute("portrait").as_string();
-                tree->addItem({ dId, id });
-		    }
+            std::vector<tgui::String> context;
+            processNode(dialogue, context, tree);
         }
 
         tree->collapseAll();
