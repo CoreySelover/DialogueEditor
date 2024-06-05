@@ -15,12 +15,14 @@ struct TextData {
 };
 
 std::unordered_map<std::string, TextData> textDataMap;
+std::vector<std::string> dialogueIds;
 
 void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
     std::string nodeName = node.name();
 
     if (nodeName == "Dialogue") {
         std::string dId = node.attribute("id").as_string();
+        dialogueIds.push_back(dId);
         context.push_back(dId);
         tree->addItem(context);
 
@@ -34,8 +36,6 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
         std::string id = node.attribute("id").as_string();
         std::string portrait = node.attribute("portrait").as_string();
         std::string text = node.text().as_string();
-        // Remove line breaks
-        text.erase(std::remove(text.begin(), text.end(), '\n'), text.end());
         textDataMap[id] = { text, portrait };
         context.push_back(id);
         tree->addItem(context);
@@ -48,8 +48,6 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
     }
     else if (nodeName == "Choice") {
         std::string choiceText = node.text().as_string();
-        // Remove line breaks
-        choiceText.erase(std::remove(choiceText.begin(), choiceText.end(), '\n'), choiceText.end());
         context.push_back(choiceText);
         tree->addItem(context);
 
@@ -69,7 +67,10 @@ void loadFile(std::string filename)
 
     if (result) {
         // load each dialogue
-        for (pugi::xml_node dialogue = doc.child("Dialogue"); dialogue; dialogue = dialogue.next_sibling("Dialogue")) {
+        // start at Dialogues node.
+        pugi::xml_node dialogues = doc.child("Dialogues");
+
+        for (pugi::xml_node dialogue = dialogues.child("Dialogue"); dialogue; dialogue = dialogue.next_sibling("Dialogue")) {
             std::vector<tgui::String> context;
             processNode(dialogue, context, tree);
         }
@@ -79,6 +80,63 @@ void loadFile(std::string filename)
 	else {
 		throw std::runtime_error("Failed to load file: " + filename);
 	}
+}
+
+void processTreeNode(const tgui::TreeView::ConstNode treeNode, pugi::xml_node& xmlParentNode) {
+    std::string nodeName = treeNode.text.toStdString();
+    std::string nodeType = "";
+
+    if (std::find(dialogueIds.begin(), dialogueIds.end(), nodeName) != dialogueIds.end()) {
+        nodeType = "Dialogue";
+	}
+	else {
+		if (nodeName.find("_") != std::string::npos) {
+			nodeType = "Text";
+		}
+		else {
+			nodeType = "Choice";
+		}
+	}
+
+    if (nodeType == "Dialogue") {
+        pugi::xml_node dialogueNode = xmlParentNode.append_child("Dialogue");
+        dialogueNode.append_attribute("id") = nodeName.c_str();
+        for (const auto& child : treeNode.nodes) {
+            processTreeNode(child, dialogueNode);
+        }
+    }
+    else if (nodeType == "Text") {
+        pugi::xml_node textNode = xmlParentNode.append_child("Text");
+        textNode.append_attribute("id") = nodeName.c_str();
+        textNode.append_attribute("portrait") = textDataMap[nodeName].portrait.c_str();
+        textNode.append_child(pugi::node_pcdata).set_value(textDataMap[nodeName].text.c_str());
+
+        for (const auto& child : treeNode.nodes) {
+            processTreeNode(child, textNode);
+        }
+    }
+    else if (nodeType == "Choice") {
+        pugi::xml_node choiceNode = xmlParentNode.append_child("Choice");
+        choiceNode.append_child(pugi::node_pcdata).set_value(nodeName.c_str());
+
+        for (const auto& child : treeNode.nodes) {
+            processTreeNode(child, choiceNode);
+        }
+    }
+}
+
+void saveFile()
+{
+    pugi::xml_document doc;
+    pugi::xml_node root = doc.append_child("Dialogues");
+
+    auto tree = gui.get<tgui::TreeView>("DialogueTree");
+
+    for (const auto& treeNode : tree->getNodes()) {
+        processTreeNode(treeNode, root);
+    }
+
+    doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml");
 }
 
 int main()
@@ -120,6 +178,8 @@ int main()
         gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
     });
 
+    gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
+
     /*tgui::FileDialog::Ptr filePicker = tgui::FileDialog::create("Open file", "Open", true);
     filePicker->setFileTypeFilters({
          {"XML files", {"*.xml"}}
@@ -130,7 +190,7 @@ int main()
     gui.add(filePicker, "filePicker");*/
 
     tgui::Filesystem::Path fileName;
-    std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/dialogue.xml"; // DEBUG
+    std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml"; // DEBUG
     bool loaded = false;
 
     while (window.isOpen())
