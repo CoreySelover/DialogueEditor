@@ -1,6 +1,56 @@
+Renderer.1 {
+    BackgroundColor = transparent;
+    BorderColor = #3C3C3C;
+    Borders = (0, 0, 0, 0);
+    TextColor = #3C3C3C;
+    TextureBackground = None;
+
+    Scrollbar {
+        ArrowBackgroundColor = #F5F5F5;
+        ArrowBackgroundColorHover = white;
+        ArrowColor = #3C3C3C;
+        ArrowColorHover = black;
+        TextureArrowDown = None;
+        TextureArrowDownHover = None;
+        TextureArrowUp = None;
+        TextureArrowUpHover = None;
+        TextureThumb = None;
+        TextureThumbHover = None;
+        TextureTrack = None;
+        TextureTrackHover = None;
+        ThumbColor = #DCDCDC;
+        ThumbColorHover = #E6E6E6;
+        TrackColor = #F5F5F5;
+    }
+}
+
+Renderer.2 {
+    BackgroundColor = #F5F5F5;
+    BackgroundColorDisabled = #E6E6E6;
+    BackgroundColorDown = #EBEBEB;
+    BackgroundColorHover = white;
+    BorderColor = #3C3C3C;
+    BorderColorDisabled = #7D7D7D;
+    BorderColorDown = black;
+    BorderColorFocused = #1E1EB4;
+    BorderColorHover = black;
+    Borders = (1, 1, 1, 1);
+    TextColor = #3C3C3C;
+    TextColorDisabled = #7D7D7D;
+    TextColorDown = black;
+    TextColorHover = black;
+    Texture = None;
+    TextureDisabled = None;
+    TextureDown = None;
+    TextureDownFocused = None;
+    TextureDownHover = None;
+    TextureFocused = None;
+    TextureHover = None;
+}
+
 TreeView.DialogueTree {
     ItemHeight = 19;
-    Size = (17.08%, 100%);
+    Size = (15%, 1040);
     TextSize = 13;
 
     Renderer {
@@ -37,4 +87,156 @@ TreeView.DialogueTree {
             TrackColor = #F5F5F5;
         }
     }
+}
+
+Panel.BgPanel {
+    Position = (288, 0);
+    Size = (85%, 100%);
+
+    Renderer {
+        BackgroundColor = white;
+        BorderColor = black;
+        TextureBackground = None;
+    }
+
+    Label.IDLabel {
+        Position = (10, 0.93%);
+        Renderer = &1;
+        ScrollbarPolicy = Never;
+        Size = (723, 27);
+        Text = "Text ID:";
+        TextSize = 20;
+    }
+
+    Label.PortraitLabel {
+        Position = (10, 7.41%);
+        Renderer = &1;
+        ScrollbarPolicy = Never;
+        Size = (139, 27);
+        Text = Portrait;
+        TextSize = 20;
+    }
+
+    EditBox.PortraitEditBox {
+        Position = (10, 10.19%);
+        Size = (380, 31);
+        Text = portrait_name;
+        TextSize = 18;
+
+        Renderer {
+            BackgroundColor = #F5F5F5;
+            BackgroundColorDisabled = #E6E6E6;
+            BackgroundColorHover = white;
+            BorderColor = #3C3C3C;
+            BorderColorDisabled = #7D7D7D;
+            BorderColorHover = black;
+            Borders = (1, 1, 1, 1);
+            CaretColor = black;
+            CaretWidth = 1;
+            DefaultTextColor = #A0A0A0;
+            Padding = (0, 0, 0, 0);
+            SelectedTextBackgroundColor = #006EFF;
+            SelectedTextColor = white;
+            TextColor = #3C3C3C;
+            TextColorDisabled = #7D7D7D;
+            Texture = None;
+            TextureDisabled = None;
+            TextureFocused = None;
+            TextureHover = None;
+        }
+    }
+
+    TextArea.TextArea {
+        DefaultText = "Enter dialogue text here";
+        HorizontalScrollbarPolicy = Never;
+        MaximumCharacters = 0;
+        MouseCursor = Text;
+        Position = (10, 14.81%);
+        Size = (58%, 44.81%);
+        Text = "";
+        TextSize = 18;
+
+        Renderer {
+            BackgroundColor = white;
+            BorderColor = black;
+            Borders = (1, 1, 1, 1);
+            CaretColor = black;
+            CaretWidth = 1;
+            DefaultTextColor = #A0A0A0;
+            Padding = (0, 0, 0, 0);
+            SelectedTextBackgroundColor = #006EFF;
+            SelectedTextColor = white;
+            TextColor = #3C3C3C;
+            TextureBackground = None;
+
+            Scrollbar {
+                ArrowBackgroundColor = #F5F5F5;
+                ArrowBackgroundColorHover = white;
+                ArrowColor = #3C3C3C;
+                ArrowColorHover = black;
+                TextureArrowDown = None;
+                TextureArrowDownHover = None;
+                TextureArrowUp = None;
+                TextureArrowUpHover = None;
+                TextureThumb = None;
+                TextureThumbHover = None;
+                TextureTrack = None;
+                TextureTrackHover = None;
+                ThumbColor = #DCDCDC;
+                ThumbColorHover = #E6E6E6;
+                TrackColor = #F5F5F5;
+            }
+        }
+    }
+
+    Button.SaveButton {
+        Enabled = false;
+        Position = (10, 660);
+        Renderer = &2;
+        Size = (160, 41);
+        Text = "Save Text";
+        TextSize = 13;
+    }
+
+    Button.ResetButton {
+        Enabled = false;
+        Position = (200, 660);
+        Renderer = &2;
+        Size = (160, 41);
+        Text = "Reset Text";
+        TextSize = 13;
+    }
+
+    Button.SaveFileButton {
+        Position = (30, 1010);
+        Renderer = &2;
+        Size = (58%, 51);
+        Text = "Save File";
+        TextSize = 13;
+    }
+}
+
+Button.AddTextButton {
+    Position = (0, 96.3%);
+    Renderer = &2;
+    Size = (84, 41);
+    Text = "Add Text";
+    TextSize = 13;
+}
+
+Button.AddChoiceButton {
+    Position = (84, 96.3%);
+    Renderer = &2;
+    Size = (94, 41);
+    Text = "Add Choice";
+    TextSize = 13;
+}
+
+Button.DeleteButton {
+    Enabled = false;
+    Position = (180, 1040);
+    Renderer = &2;
+    Size = (100, 41);
+    Text = Delete;
+    TextSize = 13;
 }

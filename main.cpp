@@ -9,6 +9,13 @@
 sf::RenderWindow window(sf::VideoMode(1920, 1080), "Dialogue Editor");
 tgui::Gui gui{ window };
 
+struct TextData {
+	std::string text;
+	std::string portrait;
+};
+
+std::unordered_map<std::string, TextData> textDataMap;
+
 void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
     std::string nodeName = node.name();
 
@@ -26,6 +33,10 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
     else if (nodeName == "Text") {
         std::string id = node.attribute("id").as_string();
         std::string portrait = node.attribute("portrait").as_string();
+        std::string text = node.text().as_string();
+        // Remove line breaks
+        text.erase(std::remove(text.begin(), text.end(), '\n'), text.end());
+        textDataMap[id] = { text, portrait };
         context.push_back(id);
         tree->addItem(context);
 
@@ -48,7 +59,6 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
         }
     }
 }
-
 
 void loadFile(std::string filename)
 {
@@ -75,14 +85,28 @@ int main()
 {
     gui.loadWidgetsFromFile("editor.txt");
 
-    tgui::FileDialog::Ptr filePicker = tgui::FileDialog::create("Open file", "Open", true);
+    // Callbacks
+    gui.get<tgui::TreeView>("DialogueTree")->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
+        if (selectedItem.empty()) {
+            gui.get<tgui::Label>("IDLabel")->setText("Text ID:");
+            gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
+            gui.get<tgui::TextArea>("TextArea")->setText(gui.get<tgui::TextArea>("TextArea")->getDefaultText());
+            gui.get<tgui::Button>("SaveButton")->setEnabled(false);
+            gui.get<tgui::Button>("ResetButton")->setEnabled(false);
+        }    
+        else {
+            
+        }
+    });
+
+    /*tgui::FileDialog::Ptr filePicker = tgui::FileDialog::create("Open file", "Open", true);
     filePicker->setFileTypeFilters({
          {"XML files", {"*.xml"}}
         });
     filePicker->setPosition("50%", "50%");
     filePicker->setOrigin(0.5f, 0.5f);
     filePicker->setClientSize({ 1080, 720 });
-    gui.add(filePicker, "filePicker");
+    gui.add(filePicker, "filePicker");*/
 
     tgui::Filesystem::Path fileName;
     std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/dialogue.xml"; // DEBUG
