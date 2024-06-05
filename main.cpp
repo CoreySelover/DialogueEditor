@@ -36,6 +36,7 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
         std::string id = node.attribute("id").as_string();
         std::string portrait = node.attribute("portrait").as_string();
         std::string text = node.text().as_string();
+
         textDataMap[id] = { text, portrait };
         context.push_back(id);
         tree->addItem(context);
@@ -48,6 +49,8 @@ void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::T
     }
     else if (nodeName == "Choice") {
         std::string choiceText = node.text().as_string();
+        // Remove line breaks
+        choiceText.erase(std::remove(choiceText.begin(), choiceText.end(), '\n'), choiceText.end());
         context.push_back(choiceText);
         tree->addItem(context);
 
@@ -119,6 +122,10 @@ void processTreeNode(const tgui::TreeView::ConstNode treeNode, pugi::xml_node& x
         pugi::xml_node choiceNode = xmlParentNode.append_child("Choice");
         choiceNode.append_child(pugi::node_pcdata).set_value(nodeName.c_str());
 
+        // Add line break back in if this node has children.
+        if (!treeNode.nodes.empty()) {
+			choiceNode.append_child(pugi::node_pcdata).set_value("\n");
+		}
         for (const auto& child : treeNode.nodes) {
             processTreeNode(child, choiceNode);
         }
