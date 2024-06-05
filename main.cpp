@@ -71,8 +71,6 @@ void loadFile(std::string filename)
     auto tree = gui.get<tgui::TreeView>("DialogueTree");
 
     if (result) {
-        // load each dialogue
-        // start at Dialogues node.
         pugi::xml_node dialogues = doc.child("Dialogues");
 
         for (pugi::xml_node dialogue = dialogues.child("Dialogue"); dialogue; dialogue = dialogue.next_sibling("Dialogue")) {
