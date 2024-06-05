@@ -19,6 +19,20 @@ std::vector<std::string> dialogueIds;
 
 std::string currentId = "";
 
+std::string determineNodeType(const std::vector<tgui::String>& selectedItem) {
+    if (std::find(dialogueIds.begin(), dialogueIds.end(), selectedItem.back()) != dialogueIds.end()) {
+        return "Dialogue";
+    }
+    else {
+        if (textDataMap.count(selectedItem.back().toStdString()) != 0) {
+            return "Text";
+        }
+        else {
+            return "Choice";
+        }
+    }
+}
+
 void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
     std::string nodeName = node.name();
 
@@ -87,19 +101,7 @@ void loadFile(std::string filename)
 
 void processTreeNode(const tgui::TreeView::ConstNode treeNode, pugi::xml_node& xmlParentNode) {
     std::string nodeName = treeNode.text.toStdString();
-    std::string nodeType = "";
-
-    if (std::find(dialogueIds.begin(), dialogueIds.end(), nodeName) != dialogueIds.end()) {
-        nodeType = "Dialogue";
-	}
-	else {
-		if (nodeName.find("_") != std::string::npos) {
-			nodeType = "Text";
-		}
-		else {
-			nodeType = "Choice";
-		}
-	}
+    std::string nodeType = determineNodeType({ treeNode.text });
 
     if (nodeType == "Dialogue") {
         pugi::xml_node dialogueNode = xmlParentNode.append_child("Dialogue");
@@ -144,20 +146,6 @@ void saveFile()
     }
 
     doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml");
-}
-
-std::string determineNodeType(const std::vector<tgui::String>& selectedItem) {
-    if (std::find(dialogueIds.begin(), dialogueIds.end(), selectedItem.back()) != dialogueIds.end()) {
-        return "Dialogue";
-    }
-    else {
-        if (textDataMap.count(selectedItem.back().toStdString()) != 0) {
-            return "Text";
-        }
-        else {
-            return "Choice";
-        }
-    }
 }
 
 int main()
