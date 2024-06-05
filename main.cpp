@@ -145,7 +145,7 @@ void saveFile()
         processTreeNode(treeNode, root);
     }
 
-    doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml");
+    doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml");
 }
 
 int main()
@@ -320,17 +320,8 @@ int main()
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
 
-    /*tgui::FileDialog::Ptr filePicker = tgui::FileDialog::create("Open file", "Open", true);
-    filePicker->setFileTypeFilters({
-         {"XML files", {"*.xml"}}
-        });
-    filePicker->setPosition("50%", "50%");
-    filePicker->setOrigin(0.5f, 0.5f);
-    filePicker->setClientSize({ 1080, 720 });
-    gui.add(filePicker, "filePicker");*/
-
     tgui::Filesystem::Path fileName;
-    std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml"; // DEBUG
+    std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
     bool loaded = false;
 
     while (window.isOpen())
