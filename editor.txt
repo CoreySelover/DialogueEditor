@@ -27,6 +27,28 @@ Renderer.1 {
 Renderer.2 {
     BackgroundColor = #F5F5F5;
     BackgroundColorDisabled = #E6E6E6;
+    BackgroundColorHover = white;
+    BorderColor = #3C3C3C;
+    BorderColorDisabled = #7D7D7D;
+    BorderColorHover = black;
+    Borders = (1, 1, 1, 1);
+    CaretColor = black;
+    CaretWidth = 1;
+    DefaultTextColor = #A0A0A0;
+    Padding = (0, 0, 0, 0);
+    SelectedTextBackgroundColor = #006EFF;
+    SelectedTextColor = white;
+    TextColor = #3C3C3C;
+    TextColorDisabled = #7D7D7D;
+    Texture = None;
+    TextureDisabled = None;
+    TextureFocused = None;
+    TextureHover = None;
+}
+
+Renderer.3 {
+    BackgroundColor = #F5F5F5;
+    BackgroundColorDisabled = #E6E6E6;
     BackgroundColorDown = #EBEBEB;
     BackgroundColorHover = white;
     BorderColor = #3C3C3C;
@@ -50,7 +72,7 @@ Renderer.2 {
 
 TreeView.DialogueTree {
     ItemHeight = 19;
-    Size = (15%, 1040);
+    Size = (15%, 100%);
     TextSize = 13;
 
     Renderer {
@@ -119,31 +141,10 @@ Panel.BgPanel {
 
     EditBox.PortraitEditBox {
         Position = (10, 10.19%);
+        Renderer = &2;
         Size = (380, 31);
         Text = portrait_name;
         TextSize = 18;
-
-        Renderer {
-            BackgroundColor = #F5F5F5;
-            BackgroundColorDisabled = #E6E6E6;
-            BackgroundColorHover = white;
-            BorderColor = #3C3C3C;
-            BorderColorDisabled = #7D7D7D;
-            BorderColorHover = black;
-            Borders = (1, 1, 1, 1);
-            CaretColor = black;
-            CaretWidth = 1;
-            DefaultTextColor = #A0A0A0;
-            Padding = (0, 0, 0, 0);
-            SelectedTextBackgroundColor = #006EFF;
-            SelectedTextColor = white;
-            TextColor = #3C3C3C;
-            TextColorDisabled = #7D7D7D;
-            Texture = None;
-            TextureDisabled = None;
-            TextureFocused = None;
-            TextureHover = None;
-        }
     }
 
     TextArea.TextArea {
@@ -192,7 +193,7 @@ Panel.BgPanel {
     Button.SaveButton {
         Enabled = false;
         Position = (10, 660);
-        Renderer = &2;
+        Renderer = &3;
         Size = (160, 41);
         Text = "Save Text";
         TextSize = 13;
@@ -201,32 +202,40 @@ Panel.BgPanel {
     Button.ResetButton {
         Enabled = false;
         Position = (200, 660);
-        Renderer = &2;
+        Renderer = &3;
         Size = (160, 41);
         Text = "Reset Text";
         TextSize = 13;
     }
 
     Button.SaveFileButton {
-        Position = (30, 1010);
-        Renderer = &2;
+        Position = (10, 940);
+        Renderer = &3;
         Size = (58%, 51);
         Text = "Save File";
         TextSize = 13;
     }
+
+    EditBox.IDEditBox {
+        Position = (10, 3.71%);
+        Renderer = &2;
+        Size = (380, 31);
+        Text = id;
+        TextSize = 18;
+    }
 }
 
 Button.AddTextButton {
-    Position = (0, 96.3%);
-    Renderer = &2;
+    Position = (420, 870.04);
+    Renderer = &3;
     Size = (84, 41);
     Text = "Add Text";
     TextSize = 13;
 }
 
 Button.AddChoiceButton {
-    Position = (84, 96.3%);
-    Renderer = &2;
+    Position = (514, 870.04);
+    Renderer = &3;
     Size = (94, 41);
     Text = "Add Choice";
     TextSize = 13;
@@ -234,9 +243,17 @@ Button.AddChoiceButton {
 
 Button.DeleteButton {
     Enabled = false;
-    Position = (180, 1040);
-    Renderer = &2;
+    Position = (620, 870);
+    Renderer = &3;
     Size = (100, 41);
     Text = Delete;
+    TextSize = 13;
+}
+
+Button.AddDialogueButton {
+    Position = (300, 870.04);
+    Renderer = &3;
+    Size = (114, 41);
+    Text = "Add Dialogue";
     TextSize = 13;
 }

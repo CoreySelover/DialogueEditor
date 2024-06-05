@@ -17,6 +17,8 @@ struct TextData {
 std::unordered_map<std::string, TextData> textDataMap;
 std::vector<std::string> dialogueIds;
 
+std::string currentId = "";
+
 void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
     std::string nodeName = node.name();
 
@@ -146,6 +148,20 @@ void saveFile()
     doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/TEST.xml");
 }
 
+std::string determineNodeType(const std::vector<tgui::String>& selectedItem) {
+    if (std::find(dialogueIds.begin(), dialogueIds.end(), selectedItem.back()) != dialogueIds.end()) {
+        return "Dialogue";
+    }
+    else {
+        if (selectedItem.back().find("_") != std::string::npos) {
+            return "Text";
+        }
+        else {
+            return "Choice";
+        }
+    }
+}
+
 int main()
 {
     gui.loadWidgetsFromFile("editor.txt");
@@ -153,37 +169,150 @@ int main()
     // Callbacks
     gui.get<tgui::TreeView>("DialogueTree")->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
         if (selectedItem.empty()) {
-            gui.get<tgui::Label>("IDLabel")->setText("Text ID:");
+            gui.get<tgui::EditBox>("IDEditBox")->setText("");
             gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
             gui.get<tgui::TextArea>("TextArea")->setText(gui.get<tgui::TextArea>("TextArea")->getDefaultText());
             gui.get<tgui::Button>("SaveButton")->setEnabled(false);
             gui.get<tgui::Button>("ResetButton")->setEnabled(false);
-        }    
+        }
         else {
             std::string id = selectedItem.back().toStdString();
-			if (textDataMap.find(id) != textDataMap.end()) {
-				gui.get<tgui::Label>("IDLabel")->setText("Text ID: " + id);
-				gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
-				gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
-				gui.get<tgui::Button>("SaveButton")->setEnabled(true);
-				gui.get<tgui::Button>("ResetButton")->setEnabled(true);
-			}
+            currentId = id;
+            if (textDataMap.find(id) != textDataMap.end()) {
+                gui.get<tgui::EditBox>("IDEditBox")->setText(id);
+                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(true);
+                gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
+                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(true);
+                gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
+                gui.get<tgui::TextArea>("TextArea")->setEnabled(true);
+                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
+                gui.get<tgui::Button>("ResetButton")->setEnabled(true);
+            }
+            else if (dialogueIds.size() > 0 && std::find(dialogueIds.begin(), dialogueIds.end(), id) != dialogueIds.end()) {
+                gui.get<tgui::EditBox>("IDEditBox")->setText(id);
+                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(true);
+                gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
+                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(false);
+                gui.get<tgui::TextArea>("TextArea")->setText("");
+                gui.get<tgui::TextArea>("TextArea")->setEnabled(false);
+                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
+                gui.get<tgui::Button>("ResetButton")->setEnabled(false);
+            }
+            else {
+                gui.get<tgui::EditBox>("IDEditBox")->setText("");
+                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(false);
+                gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
+                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(false);
+                gui.get<tgui::TextArea>("TextArea")->setText("");
+                gui.get<tgui::TextArea>("TextArea")->setEnabled(true);
+                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
+                gui.get<tgui::Button>("ResetButton")->setEnabled(true);
+            }
+        }
+        });
+
+    gui.get<tgui::Button>("SaveButton")->onPress([]() {
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto selectedItem = tree->getSelectedItem();
+        if (selectedItem.empty()) return;
+        std::string nodeType = determineNodeType(selectedItem);
+        std::string newId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
+
+        if (nodeType == "Text" && textDataMap.count(newId) != 0) {
+            // Update the text
+            textDataMap[newId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
+            textDataMap[newId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+        }
+        else if (nodeType == "Text" && currentId != newId) {
+            // Rename the text
+			textDataMap[newId] = textDataMap[currentId];
+			textDataMap.erase(currentId);
+            textDataMap[newId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
+            textDataMap[newId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+            currentId = newId;
+            tree->changeItem(selectedItem, newId);
+        }
+        else if (nodeType == "Dialogue") {
+            // Rename the dialogue
+            dialogueIds.erase(std::remove(dialogueIds.begin(), dialogueIds.end(), currentId), dialogueIds.end());
+            dialogueIds.push_back(newId);
+            currentId = newId;
+            tree->changeItem(selectedItem, newId);
+        }
+        else if (nodeType == "Choice") {
+            tree->changeItem(selectedItem, gui.get<tgui::TextArea>("TextArea")->getText().toStdString());
         }
     });
 
-    gui.get<tgui::Button>("SaveButton")->onPress([]() {
-		std::string id = gui.get<tgui::Label>("IDLabel")->getText().toStdString();
-		id = id.substr(id.find(":") + 2);
-		textDataMap[id].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
-		textDataMap[id].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
-	});
-
     gui.get<tgui::Button>("ResetButton")->onPress([]() {
-        std::string id = gui.get<tgui::Label>("IDLabel")->getText().toStdString();
-        id = id.substr(id.find(":") + 2);
+        std::string id = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
         gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
         gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
     });
+
+    gui.get<tgui::Button>("AddDialogueButton")->onPress([]() {
+		auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        std::string dialogueId = "New Dialogue" + std::to_string(dialogueIds.size());
+        // check to make sure the id is unique
+        int i = 1;
+        while (std::find(dialogueIds.begin(), dialogueIds.end(), dialogueId) != dialogueIds.end()) {
+			dialogueId = "New Dialogue" + std::to_string(dialogueIds.size() + i);
+			i++;
+		}
+		tree->addItem({ dialogueId });
+        dialogueIds.push_back(dialogueId);
+        tree->selectItem({ dialogueId });
+	});
+
+    gui.get<tgui::Button>("AddTextButton")->onPress([]() {
+
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto context = tree->getSelectedItem();
+        if (context.empty()) return;
+
+        std::string id = "NEW_TEXT" + std::to_string(textDataMap.size());
+        // check to make sure the id is unique
+        if (textDataMap.find(id) != textDataMap.end()) {
+			int i = 1;
+			while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
+				i++;
+			}
+			id = id + "_" + std::to_string(i);
+		}
+        std::string portrait = "";
+        std::string text = "";
+
+        // Determine parent type
+        std::string nodeType = determineNodeType(context);
+        if (nodeType == "Text") return;
+
+        textDataMap[id] = { text, portrait };
+        context.push_back(id);
+        tree->addItem(context);
+        tree->selectItem(context);
+    });
+
+    gui.get<tgui::Button>("AddChoiceButton")->onPress([]() {
+
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto context = tree->getSelectedItem();
+        if (context.empty()) return;
+
+		std::string choiceText = "New Choice";
+		// check to make sure the id is unique
+		int i = 1;
+		while (std::find(dialogueIds.begin(), dialogueIds.end(), choiceText) != dialogueIds.end()) {
+			choiceText = "New Choice" + std::to_string(i);
+			i++;
+		}
+
+        std::string nodeType = determineNodeType(context);
+        if (nodeType != "Text") return;
+
+		context.push_back(choiceText);
+		tree->addItem(context);
+		tree->selectItem(context);
+	});
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
 
