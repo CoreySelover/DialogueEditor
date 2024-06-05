@@ -95,7 +95,14 @@ int main()
             gui.get<tgui::Button>("ResetButton")->setEnabled(false);
         }    
         else {
-            
+            std::string id = selectedItem.back().toStdString();
+			if (textDataMap.find(id) != textDataMap.end()) {
+				gui.get<tgui::Label>("IDLabel")->setText("Text ID: " + id);
+				gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
+				gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
+				gui.get<tgui::Button>("SaveButton")->setEnabled(true);
+				gui.get<tgui::Button>("ResetButton")->setEnabled(true);
+			}
         }
     });
 
