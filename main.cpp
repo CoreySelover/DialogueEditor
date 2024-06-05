@@ -106,6 +106,20 @@ int main()
         }
     });
 
+    gui.get<tgui::Button>("SaveButton")->onPress([]() {
+		std::string id = gui.get<tgui::Label>("IDLabel")->getText().toStdString();
+		id = id.substr(id.find(":") + 2);
+		textDataMap[id].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
+		textDataMap[id].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+	});
+
+    gui.get<tgui::Button>("ResetButton")->onPress([]() {
+        std::string id = gui.get<tgui::Label>("IDLabel")->getText().toStdString();
+        id = id.substr(id.find(":") + 2);
+        gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
+        gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
+    });
+
     /*tgui::FileDialog::Ptr filePicker = tgui::FileDialog::create("Open file", "Open", true);
     filePicker->setFileTypeFilters({
          {"XML files", {"*.xml"}}
