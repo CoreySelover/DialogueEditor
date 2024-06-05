@@ -153,7 +153,7 @@ std::string determineNodeType(const std::vector<tgui::String>& selectedItem) {
         return "Dialogue";
     }
     else {
-        if (selectedItem.back().find("_") != std::string::npos) {
+        if (textDataMap.count(selectedItem.back().toStdString()) != 0) {
             return "Text";
         }
         else {
@@ -174,10 +174,12 @@ int main()
             gui.get<tgui::TextArea>("TextArea")->setText(gui.get<tgui::TextArea>("TextArea")->getDefaultText());
             gui.get<tgui::Button>("SaveButton")->setEnabled(false);
             gui.get<tgui::Button>("ResetButton")->setEnabled(false);
+            gui.get<tgui::Button>("DeleteButton")->setEnabled(false);
         }
         else {
             std::string id = selectedItem.back().toStdString();
             currentId = id;
+            gui.get<tgui::Button>("DeleteButton")->setEnabled(true);
             if (textDataMap.find(id) != textDataMap.end()) {
                 gui.get<tgui::EditBox>("IDEditBox")->setText(id);
                 gui.get<tgui::EditBox>("IDEditBox")->setEnabled(true);
@@ -313,6 +315,22 @@ int main()
 		tree->addItem(context);
 		tree->selectItem(context);
 	});
+
+    gui.get<tgui::Button>("DeleteButton")->onPress([]() {
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto selectedItem = tree->getSelectedItem();
+        if (selectedItem.empty()) return;
+
+        std::string nodeType = determineNodeType(selectedItem);
+        if (nodeType == "Dialogue") {
+            dialogueIds.erase(std::remove(dialogueIds.begin(), dialogueIds.end(), selectedItem.back().toStdString()), dialogueIds.end());
+        }
+        else if (nodeType == "Text") {
+            textDataMap.erase(selectedItem.back().toStdString());
+        }
+
+        tree->removeItem(selectedItem, false);
+    });
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
 
