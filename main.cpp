@@ -9,6 +9,12 @@
 sf::RenderWindow window(sf::VideoMode(1920, 1080), "Dialogue Editor");
 tgui::Gui gui{ window };
 
+// While building in VS
+//std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+
+// While running the exe
+std::string fileName2 = "../../../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+
 struct TextData {
 	std::string text;
 	std::string portrait;
@@ -93,9 +99,10 @@ void loadFile(std::string filename)
         }
 
         tree->collapseAll();
+        std::cout << "Loaded successfully." << std::endl;
     }
 	else {
-		throw std::runtime_error("Failed to load file: " + filename);
+		std::cout << "Error loading file: " << result.description() << std::endl;
 	}
 }
 
@@ -145,12 +152,13 @@ void saveFile()
         processTreeNode(treeNode, root);
     }
 
-    doc.save_file("../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml");
+    doc.save_file(fileName2.c_str());
 }
 
 int main()
 {
-    gui.loadWidgetsFromFile("editor.txt");
+    try { gui.loadWidgetsFromFile("editor.txt"); }
+	catch (const tgui::Exception& e) { std::cout << e.what() << std::endl;}
 
     // Callbacks
     gui.get<tgui::TreeView>("DialogueTree")->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
@@ -320,8 +328,6 @@ int main()
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
 
-    tgui::Filesystem::Path fileName;
-    std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
     bool loaded = false;
 
     while (window.isOpen())
