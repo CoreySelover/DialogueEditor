@@ -258,7 +258,7 @@ int main()
 		tree->addItem({ dialogueId });
         dialogueIds.push_back(dialogueId);
         tree->selectItem({ dialogueId });
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
 	});
 
@@ -290,7 +290,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
     });
 
@@ -314,7 +314,7 @@ int main()
 		context.push_back(choiceText);
 		tree->addItem(context);
 		tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
 	});
 
@@ -361,7 +361,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
         });
 
@@ -392,7 +392,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
         });
 
@@ -423,7 +423,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
     });
 
     gui.get<tgui::Button>("CHAR_DIRButton")->onPress([]() {
@@ -453,7 +453,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
         });
 
     gui.get<tgui::Button>("CHAR_MOVEButton")->onPress([]() {
@@ -483,7 +483,7 @@ int main()
         context.push_back(id);
         tree->addItem(context);
         tree->selectItem(context);
-        tree->setVerticalScrollbarValue(100);
+        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
         });
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
