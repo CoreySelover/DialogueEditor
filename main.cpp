@@ -155,6 +155,38 @@ void saveFile()
     doc.save_file(fileName2.c_str());
 }
 
+void onButtonPress(const std::string& idPrefix, const std::string& portrait, const std::string& text) {
+    auto tree = gui.get<tgui::TreeView>("DialogueTree");
+    auto context = tree->getSelectedItem();
+    if (context.empty()) return;
+
+    int index = tree->getItemIndexInParent(context);
+
+    // Determine parent type
+    std::string parentType = determineNodeType(context);
+    if (parentType == "Text") {
+        context.pop_back();
+    }
+
+    // Create a unique ID
+    std::string id = idPrefix + std::to_string(textDataMap.size());
+    if (textDataMap.find(id) != textDataMap.end()) {
+        int i = 1;
+        while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
+            i++;
+        }
+        id = id + "_" + std::to_string(i);
+    }
+
+    // Add to textDataMap and update tree
+    textDataMap[id] = { text, portrait };
+    context.push_back(id);
+    tree->addItem(context);
+    tree->setItemIndexInParent(context, index + 1);
+    tree->selectItem(context);
+    tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
+}
+
 int main()
 {
     try { gui.loadWidgetsFromFile("editor.txt"); }
@@ -262,34 +294,7 @@ int main()
 	});
 
     gui.get<tgui::Button>("AddTextButton")->onPress([]() {
-
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "NEW_TEXT" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-			int i = 1;
-			while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-				i++;
-			}
-			id = id + "_" + std::to_string(i);
-		}
-        std::string portrait = "";
-        std::string text = "";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
+		onButtonPress("NEW_TEXT", "", "");
     });
 
     gui.get<tgui::Button>("AddChoiceButton")->onPress([]() {
@@ -297,6 +302,8 @@ int main()
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
         auto context = tree->getSelectedItem();
         if (context.empty()) return;
+
+		int index = tree->getItemIndexInParent(context);
 
 		std::string choiceText = "New Choice";
 		// check to make sure the id is unique
@@ -306,11 +313,13 @@ int main()
 			i++;
 		}
 
+		// This code is unique to choices so we can't use the onButtonPress function
         std::string nodeType = determineNodeType(context);
         if (nodeType != "Text") return;
 
 		context.push_back(choiceText);
 		tree->addItem(context);
+		tree->setItemIndexInParent(context, index + 1);
 		tree->selectItem(context);
         tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
 
@@ -333,156 +342,24 @@ int main()
     });
 
     gui.get<tgui::Button>("QUEUEButton")->onPress([]() {
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "QUEUE_EVENT" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-            int i = 1;
-            while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-                i++;
-            }
-            id = id + "_" + std::to_string(i);
-        }
-        std::string portrait = "QUEUE_EVENT";
-        std::string text = "";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-
-        });
+		onButtonPress("QUEUE_EVENT", "QUEUE_EVENT", "");
+    });
 
     gui.get<tgui::Button>("WAIT_SHORTButton")->onPress([]() {
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "WAIT_SHORT" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-            int i = 1;
-            while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-                i++;
-            }
-            id = id + "_" + std::to_string(i);
-        }
-        std::string portrait = "WAIT_SHORT";
-        std::string text = "WAIT_SHORT";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-
-        });
+		onButtonPress("WAIT_SHORT", "WAIT_SHORT", "WAIT_SHORT");
+    });
 
     gui.get<tgui::Button>("WAIT_LONGButton")->onPress([]() {
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "WAIT_LONG" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-            int i = 1;
-            while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-                i++;
-            }
-            id = id + "_" + std::to_string(i);
-        }
-        std::string portrait = "WAIT_LONG";
-        std::string text = "WAIT_LONG";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
+		onButtonPress("WAIT_LONG", "WAIT_LONG", "WAIT_LONG");
     });
 
     gui.get<tgui::Button>("CHAR_DIRButton")->onPress([]() {
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "CHAR_DIR" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-            int i = 1;
-            while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-                i++;
-            }
-            id = id + "_" + std::to_string(i);
-        }
-        std::string portrait = "WHICH_CHAR";
-        std::string text = "DIRECTION";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-        });
+		onButtonPress("CHAR_DIR", "WHICH_CHAR", "DIRECTION");
+    });
 
     gui.get<tgui::Button>("CHAR_MOVEButton")->onPress([]() {
-        auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
-
-        // Determine parent type
-        std::string parentType = determineNodeType(context);
-        if (parentType == "Text") {
-            context.pop_back();
-        }
-
-        std::string id = "CHAR_MOVE" + std::to_string(textDataMap.size());
-        // check to make sure the id is unique
-        if (textDataMap.find(id) != textDataMap.end()) {
-            int i = 1;
-            while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-                i++;
-            }
-            id = id + "_" + std::to_string(i);
-        }
-        std::string portrait = "WHICH_CHAR";
-        std::string text = "board,tilePos";
-
-        textDataMap[id] = { text, portrait };
-        context.push_back(id);
-        tree->addItem(context);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-        });
+		onButtonPress("CHAR_MOVE", "WHICH_CHAR", "board,tilePos");
+    });
 
 	gui.get<tgui::Button>("MoveUpButton")->onPress([]() {
 		auto tree = gui.get<tgui::TreeView>("DialogueTree");
