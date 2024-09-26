@@ -10,10 +10,10 @@ sf::RenderWindow window(sf::VideoMode(1920, 1080), "Dialogue Editor");
 tgui::Gui gui{ window };
 
 // While building in VS
-std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+//std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
 
 // While running the exe
-//std::string fileName2 = "../../../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+std::string fileName2 = "../../../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
 
 struct TextData {
 	std::string text;
@@ -259,7 +259,6 @@ int main()
         dialogueIds.push_back(dialogueId);
         tree->selectItem({ dialogueId });
         tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-
 	});
 
     gui.get<tgui::Button>("AddTextButton")->onPress([]() {
@@ -291,7 +290,6 @@ int main()
         tree->addItem(context);
         tree->selectItem(context);
         tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-
     });
 
     gui.get<tgui::Button>("AddChoiceButton")->onPress([]() {
@@ -485,6 +483,23 @@ int main()
         tree->selectItem(context);
         tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
         });
+
+	gui.get<tgui::Button>("MoveUpButton")->onPress([]() {
+		auto tree = gui.get<tgui::TreeView>("DialogueTree");
+		auto selectedItem = tree->getSelectedItem();
+		if (selectedItem.empty()) return;
+        int index = tree->getItemIndexInParent(selectedItem);
+        if (index > 0) // -1 if not found, 0 if already at top
+            tree->setItemIndexInParent(selectedItem, index - 1);
+	});
+
+    gui.get<tgui::Button>("MoveDownButton")->onPress([]() {
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto selectedItem = tree->getSelectedItem();
+        if (selectedItem.empty()) return;
+        int index = tree->getItemIndexInParent(selectedItem);
+        tree->setItemIndexInParent(selectedItem, index + 1);
+    });
 
     gui.get<tgui::Button>("SaveFileButton")->onPress(saveFile);
 
