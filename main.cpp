@@ -169,7 +169,11 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
     }
 
     // Create a unique ID
-    std::string id = idPrefix + std::to_string(textDataMap.size());
+	std::string prefix = idPrefix;
+    if (prefix == "NEW_TEXT") {
+		prefix = context.front().toStdString() + "_";
+    }
+    std::string id = prefix + std::to_string(textDataMap.size());
     if (textDataMap.find(id) != textDataMap.end()) {
         int i = 1;
         while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
