@@ -208,7 +208,6 @@ int main()
 			else {
 				// Do nothing
 			}
-                
 		}
         if (selectedItem.empty()) {
             gui.get<tgui::EditBox>("IDEditBox")->setText("");
@@ -247,7 +246,7 @@ int main()
                 gui.get<tgui::EditBox>("IDEditBox")->setEnabled(false);
                 gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
                 gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(false);
-                gui.get<tgui::TextArea>("TextArea")->setText("");
+                gui.get<tgui::TextArea>("TextArea")->setText(currentId);
                 gui.get<tgui::TextArea>("TextArea")->setEnabled(true);
                 gui.get<tgui::Button>("SaveButton")->setEnabled(true);
                 gui.get<tgui::Button>("ResetButton")->setEnabled(true);
