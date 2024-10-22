@@ -198,6 +198,18 @@ int main()
 
     // Callbacks
     gui.get<tgui::TreeView>("DialogueTree")->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
+        // Save previously selected item.
+		std::string oldId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
+		if (oldId != "") {
+            if (textDataMap.find(oldId) != textDataMap.end()) {
+				textDataMap[oldId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
+				textDataMap[oldId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+			}
+			else {
+				// Do nothing
+			}
+                
+		}
         if (selectedItem.empty()) {
             gui.get<tgui::EditBox>("IDEditBox")->setText("");
             gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
