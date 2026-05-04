@@ -4,197 +4,299 @@
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-Graphics.hpp>
 
-#include "pugixml.hpp"
+//#include "pugixml.hpp"
+#include "json.hpp"
+#include <fstream>
+
+using json = nlohmann::json;
 
 sf::RenderWindow window(sf::VideoMode({ 1920, 1080 }), "Dialogue Editor", sf::State::Windowed);
 tgui::Gui gui{ window };
 
 // While building in VS
-//std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+std::string fileName2 = "../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.json";
 
 // While running the exe
-std::string fileName2 = "../../../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
+//std::string fileName2 = "../../../CrescentTerminal/CrescentTerminal/Assets/Data/Dialogue.xml";
 
-struct TextData {
-	std::string text;
-	std::string portrait;
-};
+json g_dialogueData;
 
-std::unordered_map<std::string, TextData> textDataMap;
 std::vector<std::string> dialogueIds;
 
 std::string currentId = "";
 
-std::string determineNodeType(const std::vector<tgui::String>& selectedItem) {
-    if (std::find(dialogueIds.begin(), dialogueIds.end(), selectedItem.back()) != dialogueIds.end()) {
-        return "Dialogue";
-    }
-    else {
-        if (textDataMap.count(selectedItem.back().toStdString()) != 0) {
-            return "Text";
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// XML to JSON conversion
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//// Forward declaration
+//json parseTextNode(const pugi::xml_node& node);
+//
+//// Parse <Choice>
+//json parseChoiceNode(const pugi::xml_node& choiceNode)
+//{
+//    json choiceJson;
+//
+//    // Choice text (everything before child nodes)
+//    choiceJson["text"] = choiceNode.child_value();
+//
+//    // Children (Text nodes inside this choice)
+//    json children = json::array();
+//    for (pugi::xml_node child : choiceNode.children())
+//    {
+//        if (std::string(child.name()) == "Text")
+//        {
+//            children.push_back(parseTextNode(child));
+//        }
+//    }
+//
+//    if (!children.empty())
+//        choiceJson["children"] = children;
+//
+//    return choiceJson;
+//}
+//
+//// Parse <Text>
+//json parseTextNode(const pugi::xml_node& node)
+//{
+//    json textJson;
+//
+//    textJson["id"] = node.attribute("id").as_string();
+//    textJson["portrait"] = node.attribute("portrait").as_string();
+//
+//    // Base text (excluding nested nodes)
+//    textJson["text"] = node.child_value();
+//
+//    // Choices
+//    json choices = json::array();
+//    for (pugi::xml_node child : node.children("Choice"))
+//    {
+//        choices.push_back(parseChoiceNode(child));
+//    }
+//
+//    if (!choices.empty())
+//        textJson["choices"] = choices;
+//
+//    return textJson;
+//}
+//
+//void convertDialoguesToJson(std::string filepath)
+//{
+//    pugi::xml_document doc;
+//    if (!doc.load_file(filepath.c_str()))
+//    {
+//        throw std::runtime_error("Failed to load XML");
+//    }
+//
+//    json output;
+//    output["dialogues"] = json::array();
+//
+//    for (pugi::xml_node dialogue : doc.child("Dialogues").children("Dialogue"))
+//    {
+//        json dialogueJson;
+//        dialogueJson["id"] = dialogue.attribute("id").as_string();
+//
+//        json texts = json::array();
+//
+//        for (pugi::xml_node text : dialogue.children("Text"))
+//        {
+//            texts.push_back(parseTextNode(text));
+//        }
+//
+//        dialogueJson["texts"] = texts;
+//        output["dialogues"].push_back(dialogueJson);
+//    }
+//
+//    // Save JSON
+//    std::ofstream file("dialogues.json");
+//    file << output.dump(4); // pretty print
+//}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// End of XML to JSON conversion
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+json* getJsonNodeFromPath(json& root, const std::vector<tgui::String>& path)
+{
+    json* current = nullptr;
+
+    for (auto& dialogue : root["dialogues"])
+    {
+        if (dialogue["id"] == path[0].toStdString())
+        {
+            current = &dialogue;
+            break;
         }
-        else {
-            return "Choice";
-        }
     }
+
+    if (!current) return nullptr;
+
+    for (size_t i = 1; i < path.size(); i++)
+    {
+        std::string key = path[i].toStdString();
+
+        if (current->contains("texts"))
+        {
+            for (auto& t : (*current)["texts"])
+            {
+                if (t["id"] == key)
+                {
+                    current = &t;
+                    goto next;
+                }
+            }
+        }
+
+        if (current->contains("choices"))
+        {
+            for (auto& c : (*current)["choices"])
+            {
+                if (c["text"] == key)
+                {
+                    current = &c;
+                    goto next;
+                }
+            }
+        }
+
+        if (current->contains("children"))
+        {
+            for (auto& c : (*current)["children"])
+            {
+                if (c["id"] == key || c["text"] == key)
+                {
+                    current = &c;
+                    goto next;
+                }
+            }
+        }
+
+        return nullptr;
+
+    next:;
+    }
+
+    return current;
 }
 
-void processNode(pugi::xml_node node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree) {
-    std::string nodeName = node.name();
+std::string determineNodeType(const std::vector<tgui::String>& path)
+{
+    json* node = getJsonNodeFromPath(g_dialogueData, path);
+    if (!node) return "";
 
-    if (nodeName == "Dialogue") {
-        std::string dId = node.attribute("id").as_string();
-        dialogueIds.push_back(dId);
-        context.push_back(dId);
-        tree->addItem(context);
+    if (node->contains("texts")) return "Dialogue";
+    if (node->contains("id")) return "Text";
+    return "Choice";
+}
 
-        // Recursively process child nodes
-        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
-            processNode(child, context, tree);
-        }
-
-    }
-    else if (nodeName == "Text") {
-        std::string id = node.attribute("id").as_string();
-        std::string portrait = node.attribute("portrait").as_string();
-        std::string text = node.text().as_string();
-
-        textDataMap[id] = { text, portrait };
+void processJsonNode(const json& node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree)
+{
+    if (node.contains("id") && node.contains("texts"))
+    {
+        // Dialogue
+        std::string id = node["id"];
+        dialogueIds.push_back(id);
         context.push_back(id);
         tree->addItem(context);
 
-        // Recursively process child nodes
-        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
-            processNode(child, context, tree);
-        }
-
+        for (const auto& text : node["texts"])
+            processJsonNode(text, context, tree);
     }
-    else if (nodeName == "Choice") {
-        std::string choiceText = node.text().as_string();
-        // Remove line breaks
-        choiceText.erase(std::remove(choiceText.begin(), choiceText.end(), '\n'), choiceText.end());
+    else if (node.contains("id") && node.contains("text"))
+    {
+        std::string id = node["id"];
+        context.push_back(id);
+        tree->addItem(context);
+
+        if (node.contains("choices"))
+        {
+            for (const auto& choice : node["choices"])
+                processJsonNode(choice, context, tree);
+        }
+    }
+    else if (node.contains("text") && !node.contains("id"))
+    {
+        // Choice
+        std::string choiceText = node["text"];
         context.push_back(choiceText);
         tree->addItem(context);
 
-        // Recursively process child nodes
-        for (pugi::xml_node child = node.first_child(); child; child = child.next_sibling()) {
-            processNode(child, context, tree);
+        if (node.contains("children"))
+        {
+            for (const auto& child : node["children"])
+                processJsonNode(child, context, tree);
         }
     }
 }
 
-void loadFile(std::string filename)
+void loadFile(const std::string& filename)
 {
-	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_file(filename.c_str());
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+		throw std::runtime_error("Failed to open file: " + filename);
+    }
+
+    file >> g_dialogueData;
 
     auto tree = gui.get<tgui::TreeView>("DialogueTree");
 
-    if (result) {
-        pugi::xml_node dialogues = doc.child("Dialogues");
-
-        for (pugi::xml_node dialogue = dialogues.child("Dialogue"); dialogue; dialogue = dialogue.next_sibling("Dialogue")) {
-            std::vector<tgui::String> context;
-            processNode(dialogue, context, tree);
-        }
-
-        tree->collapseAll();
-        std::cout << "Loaded successfully." << std::endl;
+    for (const auto& dialogue : g_dialogueData["dialogues"])
+    {
+        std::vector<tgui::String> context;
+        processJsonNode(dialogue, context, tree);
     }
-	else {
-		std::cout << "Error loading file: " << result.description() << std::endl;
-	}
-}
 
-void processTreeNode(const tgui::TreeView::ConstNode treeNode, pugi::xml_node& xmlParentNode) {
-    std::string nodeName = treeNode.text.toStdString();
-    std::string nodeType = determineNodeType({ treeNode.text });
-
-    if (nodeType == "Dialogue") {
-        pugi::xml_node dialogueNode = xmlParentNode.append_child("Dialogue");
-        dialogueNode.append_attribute("id") = nodeName.c_str();
-        for (const auto& child : treeNode.nodes) {
-            processTreeNode(child, dialogueNode);
-        }
-    }
-    else if (nodeType == "Text") {
-        pugi::xml_node textNode = xmlParentNode.append_child("Text");
-        textNode.append_attribute("id") = nodeName.c_str();
-        textNode.append_attribute("portrait") = textDataMap[nodeName].portrait.c_str();
-        textNode.append_child(pugi::node_pcdata).set_value(textDataMap[nodeName].text.c_str());
-
-        for (const auto& child : treeNode.nodes) {
-            processTreeNode(child, textNode);
-        }
-    }
-    else if (nodeType == "Choice") {
-        pugi::xml_node choiceNode = xmlParentNode.append_child("Choice");
-        choiceNode.append_child(pugi::node_pcdata).set_value(nodeName.c_str());
-
-        // Add line break back in if this node has children.
-        if (!treeNode.nodes.empty()) {
-			choiceNode.append_child(pugi::node_pcdata).set_value("\n");
-		}
-        for (const auto& child : treeNode.nodes) {
-            processTreeNode(child, choiceNode);
-        }
-    }
+    tree->collapseAll();
 }
 
 void saveFile()
 {
-    pugi::xml_document doc;
-    pugi::xml_node root = doc.append_child("Dialogues");
-
-    auto tree = gui.get<tgui::TreeView>("DialogueTree");
-
-    for (const auto& treeNode : tree->getNodes()) {
-        processTreeNode(treeNode, root);
-    }
-
-    doc.save_file(fileName2.c_str());
+    std::ofstream file(fileName2);
+    file << g_dialogueData.dump(4);
 }
 
-void onButtonPress(const std::string& idPrefix, const std::string& portrait, const std::string& text) {
+void onButtonPress(const std::string& idPrefix, const std::string& portrait, const std::string& text)
+{
     auto tree = gui.get<tgui::TreeView>("DialogueTree");
-    auto context = tree->getSelectedItem();
-    if (context.empty()) return;
+    auto path = tree->getSelectedItem();
+    if (path.empty()) return;
 
-    int index = tree->getItemIndexInParent(context);
+    json* parent = getJsonNodeFromPath(g_dialogueData, path);
+    if (!parent) return;
 
-    // Determine parent type
-    std::string parentType = determineNodeType(context);
-    if (parentType == "Text") {
-        context.pop_back();
+    std::string type = determineNodeType(path);
+
+    // If clicking on a Text node, insert under its parent
+    if (type == "Text")
+    {
+        path.pop_back();
+        parent = getJsonNodeFromPath(g_dialogueData, path);
     }
 
-    // Create a unique ID
-	std::string prefix = idPrefix;
-    if (prefix == "NEW_TEXT") {
-		prefix = context.front().toStdString() + "_";
-    }
-    std::string id = prefix + std::to_string(textDataMap.size());
-    if (textDataMap.find(id) != textDataMap.end()) {
-        int i = 1;
-        while (textDataMap.find(id + "_" + std::to_string(i)) != textDataMap.end()) {
-            i++;
-        }
-        id = id + "_" + std::to_string(i);
-    }
+    std::string newId = idPrefix + std::to_string(std::rand() % 100000);
 
-    // Add to textDataMap and update tree
-    textDataMap[id] = { text, portrait };
-    context.push_back(id);
-    tree->addItem(context);
-    tree->setItemIndexInParent(context, index + 1);
-    tree->selectItem(context);
-    tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
+    json newNode;
+    newNode["id"] = newId;
+    newNode["portrait"] = portrait;
+    newNode["text"] = text;
+
+    if (!parent->contains("texts"))
+        (*parent)["texts"] = json::array();
+
+    (*parent)["texts"].push_back(newNode);
+
+    // Update UI
+    path.push_back(newId);
+    tree->addItem(path);
+    tree->selectItem(path);
 }
 
 int main()
 {
     try { gui.loadWidgetsFromFile("editor.txt"); }
 	catch (const tgui::Exception& e) { std::cout << e.what() << std::endl;}
+
+    //convertDialoguesToJson(fileName2);
 
 	gui.setTextSize(24);
 
@@ -203,100 +305,78 @@ int main()
 
     // Callbacks
     tree->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
-        // Save previously selected item.
-		std::string oldId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
-		if (oldId != "") {
-            if (textDataMap.find(oldId) != textDataMap.end()) {
-				textDataMap[oldId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
-				textDataMap[oldId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
-			}
-			else {
-				// Do nothing
-			}
-		}
-        if (selectedItem.empty()) {
-            gui.get<tgui::EditBox>("IDEditBox")->setText("");
-            gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
-            gui.get<tgui::TextArea>("TextArea")->setText(gui.get<tgui::TextArea>("TextArea")->getDefaultText());
-            gui.get<tgui::Button>("SaveButton")->setEnabled(false);
-            gui.get<tgui::Button>("ResetButton")->setEnabled(false);
-            gui.get<tgui::Button>("DeleteButton")->setEnabled(false);
+
+        if (selectedItem.empty())
+            return;
+
+        json* node = getJsonNodeFromPath(g_dialogueData, selectedItem);
+        if (!node) return;
+
+        currentId = selectedItem.back().toStdString();
+
+        auto idBox = gui.get<tgui::EditBox>("IDEditBox");
+        auto portraitBox = gui.get<tgui::EditBox>("PortraitEditBox");
+        auto textArea = gui.get<tgui::TextArea>("TextArea");
+
+        std::string type = determineNodeType(selectedItem);
+
+        if (type == "Dialogue")
+        {
+            idBox->setText((*node)["id"].get<std::string>());
+            portraitBox->setText("");
+            textArea->setText("");
         }
-        else {
-            std::string id = selectedItem.back().toStdString();
-            currentId = id;
-            gui.get<tgui::Button>("DeleteButton")->setEnabled(true);
-            if (textDataMap.find(id) != textDataMap.end()) {
-                gui.get<tgui::EditBox>("IDEditBox")->setText(id);
-                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(true);
-                gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
-                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(true);
-                gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
-                gui.get<tgui::TextArea>("TextArea")->setEnabled(true);
-                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
-                gui.get<tgui::Button>("ResetButton")->setEnabled(true);
-            }
-            else if (dialogueIds.size() > 0 && std::find(dialogueIds.begin(), dialogueIds.end(), id) != dialogueIds.end()) {
-                gui.get<tgui::EditBox>("IDEditBox")->setText(id);
-                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(true);
-                gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
-                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(false);
-                gui.get<tgui::TextArea>("TextArea")->setText("");
-                gui.get<tgui::TextArea>("TextArea")->setEnabled(false);
-                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
-                gui.get<tgui::Button>("ResetButton")->setEnabled(false);
-            }
-            else {
-                gui.get<tgui::EditBox>("IDEditBox")->setText("");
-                gui.get<tgui::EditBox>("IDEditBox")->setEnabled(false);
-                gui.get<tgui::EditBox>("PortraitEditBox")->setText("");
-                gui.get<tgui::EditBox>("PortraitEditBox")->setEnabled(false);
-                gui.get<tgui::TextArea>("TextArea")->setText(currentId);
-                gui.get<tgui::TextArea>("TextArea")->setEnabled(true);
-                gui.get<tgui::Button>("SaveButton")->setEnabled(true);
-                gui.get<tgui::Button>("ResetButton")->setEnabled(true);
-            }
+        else if (type == "Text")
+        {
+            idBox->setText((*node)["id"].get<std::string>());
+            portraitBox->setText(node->value("portrait", ""));
+            textArea->setText(node->value("text", ""));
+        }
+        else // Choice
+        {
+            idBox->setText("");
+            portraitBox->setText("");
+            textArea->setText(node->value("text", ""));
         }
         });
 
     gui.get<tgui::Button>("SaveButton")->onPress([]() {
+
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
         auto selectedItem = tree->getSelectedItem();
         if (selectedItem.empty()) return;
-        std::string nodeType = determineNodeType(selectedItem);
-        std::string newId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
 
-        if (nodeType == "Text" && textDataMap.count(newId) != 0) {
-            // Update the text
-            textDataMap[newId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
-            textDataMap[newId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+        json* node = getJsonNodeFromPath(g_dialogueData, selectedItem);
+        if (!node) return;
+
+        std::string type = determineNodeType(selectedItem);
+
+        if (type == "Text")
+        {
+            (*node)["portrait"] = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
+            (*node)["text"] = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
         }
-        else if (nodeType == "Text" && currentId != newId) {
-            // Rename the text
-			textDataMap[newId] = textDataMap[currentId];
-			textDataMap.erase(currentId);
-            textDataMap[newId].portrait = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
-            textDataMap[newId].text = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
-            currentId = newId;
-            tree->changeItem(selectedItem, newId);
+        else if (type == "Choice")
+        {
+            (*node)["text"] = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
         }
-        else if (nodeType == "Dialogue") {
-            // Rename the dialogue
-            dialogueIds.erase(std::remove(dialogueIds.begin(), dialogueIds.end(), currentId), dialogueIds.end());
-            dialogueIds.push_back(newId);
-            currentId = newId;
-            tree->changeItem(selectedItem, newId);
+        else if (type == "Dialogue")
+        {
+            (*node)["id"] = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
         }
-        else if (nodeType == "Choice") {
-            tree->changeItem(selectedItem, gui.get<tgui::TextArea>("TextArea")->getText().toStdString());
-        }
-    });
+        });
 
     gui.get<tgui::Button>("ResetButton")->onPress([]() {
-        std::string id = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
-        gui.get<tgui::EditBox>("PortraitEditBox")->setText(textDataMap[id].portrait);
-        gui.get<tgui::TextArea>("TextArea")->setText(textDataMap[id].text);
-    });
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+        auto selectedItem = tree->getSelectedItem();
+        if (selectedItem.empty()) return;
+
+        json* node = getJsonNodeFromPath(g_dialogueData, selectedItem);
+        if (!node) return;
+
+        gui.get<tgui::EditBox>("PortraitEditBox")->setText(node->value("portrait", ""));
+        gui.get<tgui::TextArea>("TextArea")->setText(node->value("text", ""));
+        });
 
     gui.get<tgui::Button>("AddDialogueButton")->onPress([]() {
 		auto tree = gui.get<tgui::TreeView>("DialogueTree");
@@ -347,19 +427,45 @@ int main()
 
     gui.get<tgui::Button>("DeleteButton")->onPress([]() {
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto selectedItem = tree->getSelectedItem();
-        if (selectedItem.empty()) return;
+        auto path = tree->getSelectedItem();
+        if (path.empty()) return;
 
-        std::string nodeType = determineNodeType(selectedItem);
-        if (nodeType == "Dialogue") {
-            dialogueIds.erase(std::remove(dialogueIds.begin(), dialogueIds.end(), selectedItem.back().toStdString()), dialogueIds.end());
+        if (path.size() == 1)
+        {
+            // Remove dialogue
+            auto& arr = g_dialogueData["dialogues"];
+            arr.erase(std::remove_if(arr.begin(), arr.end(),
+                [&](const json& d) { return d["id"] == path[0].toStdString(); }),
+                arr.end());
         }
-        else if (nodeType == "Text") {
-            textDataMap.erase(selectedItem.back().toStdString());
+        else
+        {
+            // Remove from parent
+            std::vector<tgui::String> parentPath = path;
+            parentPath.pop_back();
+
+            json* parent = getJsonNodeFromPath(g_dialogueData, parentPath);
+            if (!parent) return;
+
+            std::string key = path.back().toStdString();
+
+            auto removeFromArray = [&](json& arr)
+                {
+                    arr.erase(std::remove_if(arr.begin(), arr.end(),
+                        [&](const json& n) {
+                            return (n.contains("id") && n["id"] == key) ||
+                                (n.contains("text") && n["text"] == key);
+                        }),
+                        arr.end());
+                };
+
+            if (parent->contains("texts")) removeFromArray((*parent)["texts"]);
+            if (parent->contains("choices")) removeFromArray((*parent)["choices"]);
+            if (parent->contains("children")) removeFromArray((*parent)["children"]);
         }
 
-        tree->removeItem(selectedItem, false);
-    });
+        tree->removeItem(path, false);
+        });
 
     gui.get<tgui::Button>("QUEUEButton")->onPress([]() {
 		onButtonPress("QUEUE_EVENT", "QUEUE_EVENT", "");
@@ -411,7 +517,7 @@ int main()
                 window.close();
             }
             else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
-        {
+            {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
                     window.close();
             }
