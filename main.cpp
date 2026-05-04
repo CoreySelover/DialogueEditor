@@ -196,8 +196,13 @@ int main()
     try { gui.loadWidgetsFromFile("editor.txt"); }
 	catch (const tgui::Exception& e) { std::cout << e.what() << std::endl;}
 
+	gui.setTextSize(24);
+
+	auto tree = gui.get<tgui::TreeView>("DialogueTree");
+	tree->getVerticalScrollbar()->setPolicy(tgui::Scrollbar::Policy::Automatic);
+
     // Callbacks
-    gui.get<tgui::TreeView>("DialogueTree")->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
+    tree->onItemSelect([](const std::vector<tgui::String>& selectedItem) {
         // Save previously selected item.
 		std::string oldId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
 		if (oldId != "") {
