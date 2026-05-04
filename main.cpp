@@ -6,7 +6,7 @@
 
 #include "pugixml.hpp"
 
-sf::RenderWindow window(sf::VideoMode(1920, 1080), "Dialogue Editor");
+sf::RenderWindow window(sf::VideoMode({ 1920, 1080 }), "Dialogue Editor", sf::State::Windowed);
 tgui::Gui gui{ window };
 
 // While building in VS
@@ -404,13 +404,19 @@ int main()
 
     while (window.isOpen())
     {
-        sf::Event event;
-        while (window.pollEvent(event))
+        while (const std::optional event = window.pollEvent())
         {
-            gui.handleEvent(event);
-
-            if (event.type == sf::Event::Closed)
+            if (event->is<sf::Event::Closed>())
+            {
                 window.close();
+            }
+            else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
+        {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                    window.close();
+            }
+
+            gui.handleEvent(event.value());
         }
 
         if (!loaded) {
