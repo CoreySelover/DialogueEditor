@@ -31,6 +31,31 @@ std::string currentId = "";
 
 //// Forward declaration
 //json parseTextNode(const pugi::xml_node& node);
+// 
+//std::string normalize(const std::string& s)
+//{
+//    std::string result;
+//    bool inWhitespace = false;
+//
+//    for (char c : s)
+//    {
+//        if (isspace(c))
+//        {
+//            if (!inWhitespace)
+//            {
+//                result += ' ';
+//                inWhitespace = true;
+//            }
+//        }
+//        else
+//        {
+//            result += c;
+//            inWhitespace = false;
+//        }
+//    }
+//
+//    return result;
+//}
 //
 //// Parse <Choice>
 //json parseChoiceNode(const pugi::xml_node& choiceNode)
@@ -38,7 +63,7 @@ std::string currentId = "";
 //    json choiceJson;
 //
 //    // Choice text (everything before child nodes)
-//    choiceJson["text"] = choiceNode.child_value();
+//    choiceJson["text"] = normalize(choiceNode.child_value());
 //
 //    // Children (Text nodes inside this choice)
 //    json children = json::array();
@@ -65,7 +90,7 @@ std::string currentId = "";
 //    textJson["portrait"] = node.attribute("portrait").as_string();
 //
 //    // Base text (excluding nested nodes)
-//    textJson["text"] = node.child_value();
+//    textJson["text"] = normalize(node.child_value());
 //
 //    // Choices
 //    json choices = json::array();
@@ -189,44 +214,28 @@ std::string determineNodeType(const std::vector<tgui::String>& path)
     return "Choice";
 }
 
-void processJsonNode(const json& node, std::vector<tgui::String> context, tgui::TreeView::Ptr tree)
+void processJsonNode(const json& node, std::vector<tgui::String> path, tgui::TreeView::Ptr tree)
 {
-    if (node.contains("id") && node.contains("texts"))
-    {
-        // Dialogue
-        std::string id = node["id"];
-        dialogueIds.push_back(id);
-        context.push_back(id);
-        tree->addItem(context);
+    std::string label;
 
-        for (const auto& text : node["texts"])
-            processJsonNode(text, context, tree);
-    }
-    else if (node.contains("id") && node.contains("text"))
-    {
-        std::string id = node["id"];
-        context.push_back(id);
-        tree->addItem(context);
+    if (node.contains("texts"))       label = node["id"];
+    else if (node.contains("id"))     label = node["id"];
+    else                              label = node["text"];
 
-        if (node.contains("choices"))
-        {
-            for (const auto& choice : node["choices"])
-                processJsonNode(choice, context, tree);
-        }
-    }
-    else if (node.contains("text") && !node.contains("id"))
-    {
-        // Choice
-        std::string choiceText = node["text"];
-        context.push_back(choiceText);
-        tree->addItem(context);
+    path.push_back(label);
+    tree->addItem(path);
 
-        if (node.contains("children"))
-        {
-            for (const auto& child : node["children"])
-                processJsonNode(child, context, tree);
-        }
-    }
+    if (node.contains("texts"))
+        for (const auto& t : node["texts"])
+            processJsonNode(t, path, tree);
+
+    if (node.contains("choices"))
+        for (const auto& c : node["choices"])
+            processJsonNode(c, path, tree);
+
+    if (node.contains("children"))
+        for (const auto& c : node["children"])
+            processJsonNode(c, path, tree);
 }
 
 void loadFile(const std::string& filename)
@@ -266,29 +275,39 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
 
     std::string type = determineNodeType(path);
 
-    // If clicking on a Text node, insert under its parent
-    if (type == "Text")
-    {
-        path.pop_back();
-        parent = getJsonNodeFromPath(g_dialogueData, path);
-    }
-
-    std::string newId = idPrefix + std::to_string(std::rand() % 100000);
-
     json newNode;
-    newNode["id"] = newId;
-    newNode["portrait"] = portrait;
-    newNode["text"] = text;
 
-    if (!parent->contains("texts"))
-        (*parent)["texts"] = json::array();
+    if (type == "Dialogue")
+    {
+        std::string id = idPrefix + std::to_string(std::rand() % 100000);
 
-    (*parent)["texts"].push_back(newNode);
+        newNode = {
+            {"id", id},
+            {"portrait", portrait},
+            {"text", text}
+        };
 
-    // Update UI
-    path.push_back(newId);
-    tree->addItem(path);
-    tree->selectItem(path);
+        (*parent)["texts"].push_back(newNode);
+
+        path.push_back(id);
+        tree->addItem(path);
+        tree->selectItem(path);
+    }
+    else if (type == "Text")
+    {
+        std::string choiceText = "New Choice";
+
+        newNode = {
+            {"text", choiceText},
+            {"children", json::array()}
+        };
+
+        (*parent)["choices"].push_back(newNode);
+
+        path.push_back(choiceText);
+        tree->addItem(path);
+        tree->selectItem(path);
+    }
 }
 
 int main()
@@ -338,31 +357,47 @@ int main()
             portraitBox->setText("");
             textArea->setText(node->value("text", ""));
         }
+
+        gui.get<tgui::Button>("SaveButton")->setEnabled(true);
+        gui.get<tgui::Button>("ResetButton")->setEnabled(true);
         });
 
     gui.get<tgui::Button>("SaveButton")->onPress([]() {
 
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto selectedItem = tree->getSelectedItem();
-        if (selectedItem.empty()) return;
+        auto path = tree->getSelectedItem();
+        if (path.empty()) return;
 
-        json* node = getJsonNodeFromPath(g_dialogueData, selectedItem);
+        json* node = getJsonNodeFromPath(g_dialogueData, path);
         if (!node) return;
 
-        std::string type = determineNodeType(selectedItem);
+        std::string type = determineNodeType(path);
 
         if (type == "Text")
         {
+            std::string newId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
+
+            // Update JSON
+            (*node)["id"] = newId;
             (*node)["portrait"] = gui.get<tgui::EditBox>("PortraitEditBox")->getText().toStdString();
             (*node)["text"] = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+
+            // Update tree label
+            tree->changeItem(path, newId);
         }
         else if (type == "Choice")
         {
-            (*node)["text"] = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+            std::string newText = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
+
+            (*node)["text"] = newText;
+            tree->changeItem(path, newText);
         }
         else if (type == "Dialogue")
         {
-            (*node)["id"] = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
+            std::string newId = gui.get<tgui::EditBox>("IDEditBox")->getText().toStdString();
+
+            (*node)["id"] = newId;
+            tree->changeItem(path, newId);
         }
         });
 
@@ -379,19 +414,19 @@ int main()
         });
 
     gui.get<tgui::Button>("AddDialogueButton")->onPress([]() {
-		auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        std::string dialogueId = "New Dialogue" + std::to_string(dialogueIds.size());
-        // check to make sure the id is unique
-        int i = 1;
-        while (std::find(dialogueIds.begin(), dialogueIds.end(), dialogueId) != dialogueIds.end()) {
-			dialogueId = "New Dialogue" + std::to_string(dialogueIds.size() + i);
-			i++;
-		}
-		tree->addItem({ dialogueId });
-        dialogueIds.push_back(dialogueId);
-        tree->selectItem({ dialogueId });
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
-	});
+        auto tree = gui.get<tgui::TreeView>("DialogueTree");
+
+        std::string id = "NewDialogue" + std::to_string(std::rand() % 100000);
+
+        json newDialogue;
+        newDialogue["id"] = id;
+        newDialogue["texts"] = json::array();
+
+        g_dialogueData["dialogues"].push_back(newDialogue);
+
+        tree->addItem({ id });
+        tree->selectItem({ id });
+        });
 
     gui.get<tgui::Button>("AddTextButton")->onPress([]() {
 		onButtonPress("NEW_TEXT", "", "");
