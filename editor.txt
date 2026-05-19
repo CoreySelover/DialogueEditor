@@ -73,7 +73,7 @@ Renderer.3 {
 TreeView.DialogueTree {
     HorizontalScrollbarPolicy = Automatic;
     ItemHeight = 19;
-    Size = (15%, 95.37%);
+    Size = (15%, 1030);
     TextSize = 13;
     VerticalScrollbarPolicy = Automatic;
 
@@ -195,26 +195,26 @@ Panel.BgPanel {
 
     Button.SaveButton {
         Enabled = false;
-        Position = (0.61%, 61.11%);
+        Position = (10, 660);
         Renderer = &3;
-        Size = (9.8%, 3.8%);
+        Size = (160, 41);
         Text = "Save Text";
         TextSize = 13;
     }
 
     Button.ResetButton {
         Enabled = false;
-        Position = (12.25%, 61.11%);
+        Position = (200, 660);
         Renderer = &3;
-        Size = (9.8%, 3.8%);
+        Size = (160, 41);
         Text = "Reset Text";
         TextSize = 13;
     }
 
     Button.SaveFileButton {
-        Position = (0.61%, 87.04%);
+        Position = (10, 940);
         Renderer = &3;
-        Size = (947, 4.72%);
+        Size = (306.56, 51);
         Text = "Save File";
         TextSize = 13;
     }
@@ -229,80 +229,80 @@ Panel.BgPanel {
 }
 
 Button.AddTextButton {
-    Position = (21.88%, 71.3%);
+    Position = (420, 770.04);
     Renderer = &3;
-    Size = (4.38%, 3.8%);
+    Size = (84, 41);
     Text = "Add Text";
     TextSize = 13;
 }
 
 Button.AddChoiceButton {
-    Position = (26.77%, 71.3%);
+    Position = (514, 770.04);
     Renderer = &3;
-    Size = (4.9%, 3.8%);
+    Size = (94, 41);
     Text = "Add Choice";
     TextSize = 13;
 }
 
 Button.DeleteButton {
     Enabled = false;
-    Position = (15.62%, 80.56%);
+    Position = (300, 870);
     Renderer = &3;
-    Size = (5.21%, 3.8%);
+    Size = (100, 41);
     Text = Delete;
     TextSize = 13;
 }
 
 Button.AddDialogueButton {
-    Position = (15.62%, 71.3%);
+    Position = (300, 770.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = "Add Dialogue";
     TextSize = 13;
 }
 
 Button.QUEUEButton {
-    Position = (15.62%, 75.93%);
+    Position = (300, 820.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = QUEUE_EVENT;
     TextSize = 13;
 }
 
 Button.WAIT_SHORTButton {
-    Position = (22.08%, 75.93%);
+    Position = (424, 820.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = WAIT_SHORT;
     TextSize = 13;
 }
 
 Button.WAIT_LONGButton {
-    Position = (28.33%, 75.93%);
+    Position = (544, 820.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = WAIT_LONG;
     TextSize = 13;
 }
 
 Button.CHAR_DIRButton {
-    Position = (34.58%, 75.93%);
+    Position = (664, 820.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = CHAR_DIR;
     TextSize = 13;
 }
 
 Button.CHAR_MOVEButton {
-    Position = (40.83%, 75.93%);
+    Position = (784, 820.04);
     Renderer = &3;
-    Size = (5.94%, 3.8%);
+    Size = (114, 41);
     Text = CHAR_MOVE;
     TextSize = 13;
 }
 
 Button.MoveUpButton {
-    Position = (0, 95.37%);
+    Position = (0, 1030);
     Renderer = &3;
     Size = (140, 51);
     Text = "Move Up";
@@ -310,9 +310,17 @@ Button.MoveUpButton {
 }
 
 Button.MoveDownButton {
-    Position = (140, 95.37%);
+    Position = (140, 1030);
     Renderer = &3;
     Size = (140, 51);
     Text = "Move Down";
+    TextSize = 13;
+}
+
+Button.LoadFileButton {
+    Position = (610, 940);
+    Renderer = &3;
+    Size = (511, 46.0984);
+    Text = "Load File";
     TextSize = 13;
 }
