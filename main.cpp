@@ -267,47 +267,82 @@ void saveFile()
 void onButtonPress(const std::string& idPrefix, const std::string& portrait, const std::string& text)
 {
     auto tree = gui.get<tgui::TreeView>("DialogueTree");
-    auto path = tree->getSelectedItem();
-    if (path.empty()) return;
+    auto context = tree->getSelectedItem();
+    if (context.empty()) return;
 
-    json* parent = getJsonNodeFromPath(g_dialogueData, path);
+    int index = tree->getItemIndexInParent(context);
+
+    // If a text node is selected, insert beside it instead of inside it
+    std::string selectedType = determineNodeType(context);
+    if (selectedType == "Text") {
+        context.pop_back();
+    }
+
+    json* parent = getJsonNodeFromPath(g_dialogueData, context);
     if (!parent) return;
 
-    std::string type = determineNodeType(path);
+    // Generate unique ID
+    std::string prefix = idPrefix;
+    if (prefix == "NEW_TEXT") {
+        prefix = context.front().toStdString() + "_";
+    }
 
-    json newNode;
+    std::string id = prefix + std::to_string(std::rand() % 100000);
 
-    if (type == "Dialogue")
-    {
-        std::string id = idPrefix + std::to_string(std::rand() % 100000);
+    // Make sure ID is unique
+    auto idExists = [&](const std::string& checkId) {
+        if (!parent->contains("texts")) return false;
 
-        newNode = {
-            {"id", id},
-            {"portrait", portrait},
-            {"text", text}
+        for (auto& t : (*parent)["texts"]) {
+            if (t.value("id", "") == checkId)
+                return true;
+        }
+
+        return false;
         };
 
-        (*parent)["texts"].push_back(newNode);
-
-        path.push_back(id);
-        tree->addItem(path);
-        tree->selectItem(path);
+    if (idExists(id)) {
+        int i = 1;
+        while (idExists(id + "_" + std::to_string(i))) {
+            ++i;
+        }
+        id = id + "_" + std::to_string(i);
     }
-    else if (type == "Text")
-    {
-        std::string choiceText = "New Choice";
 
-        newNode = {
-            {"text", choiceText},
-            {"children", json::array()}
-        };
+    // Create new node
+    json newNode = {
+        {"id", id},
+        {"portrait", portrait},
+        {"text", text}
+    };
 
-        (*parent)["choices"].push_back(newNode);
-
-        path.push_back(choiceText);
-        tree->addItem(path);
-        tree->selectItem(path);
+    // Ensure texts array exists
+    if (!parent->contains("texts")) {
+        (*parent)["texts"] = json::array();
     }
+
+    // Insert after currently selected item
+    int insertPos = index + 1;
+
+    auto& texts = (*parent)["texts"];
+
+    if (insertPos >= texts.size()) {
+        texts.push_back(newNode);
+    }
+    else {
+        texts.insert(texts.begin() + insertPos, newNode);
+    }
+
+    // Update tree
+    context.push_back(id);
+
+    tree->addItem(context);
+    tree->setItemIndexInParent(context, insertPos);
+    tree->selectItem(context);
+
+    tree->getVerticalScrollbar()->setValue(
+        tree->getVerticalScrollbar()->getMaxValue()
+    );
 }
 
 int main()
