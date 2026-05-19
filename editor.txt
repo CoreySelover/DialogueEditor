@@ -245,7 +245,6 @@ Button.AddChoiceButton {
 }
 
 Button.DeleteButton {
-    Enabled = false;
     Position = (300, 870);
     Renderer = &3;
     Size = (100, 41);

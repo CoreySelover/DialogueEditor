@@ -263,10 +263,6 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
     tree->addItem(context);
     tree->setItemIndexInParent(context, insertPos);
     tree->selectItem(context);
-
-    tree->getVerticalScrollbar()->setValue(
-        tree->getVerticalScrollbar()->getMaxValue()
-    );
 }
 
 int main()
@@ -405,7 +401,6 @@ int main()
         tree->addItem(context);
         tree->setItemIndexInParent(context, index + 1);
         tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
         });
 
     gui.get<tgui::Button>("DeleteButton")->onPress([]() {
