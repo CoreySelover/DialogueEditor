@@ -53,7 +53,7 @@ std::string openFilePicker(const std::string& mode = "open")
 sf::RenderWindow window(sf::VideoMode({ 1920, 1080 }), "Dialogue Editor", sf::State::Windowed);
 tgui::Gui gui{ window };
 
-std::string fileName2 = "";
+std::string fileName = "";
 
 json g_dialogueData;
 
@@ -183,8 +183,8 @@ void saveFile()
 {
     std::string chosen = openFilePicker("save");
     if (chosen.empty()) return;
-    fileName2 = chosen;
-    std::ofstream file(fileName2);
+    fileName = chosen;
+    std::ofstream file(fileName);
     file << g_dialogueData.dump(4);
 }
 
@@ -484,9 +484,9 @@ int main()
     gui.get<tgui::Button>("LoadFileButton")->onPress([]() {
         std::string chosen = openFilePicker("open");
         if (chosen.empty()) return;
-        fileName2 = chosen;
+        fileName = chosen;
         g_dialogueData = {};
-        try { loadFile(fileName2); }
+        try { loadFile(fileName); }
         catch (const std::exception& e) { std::cout << e.what() << std::endl; }
         });
 

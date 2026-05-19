@@ -248,7 +248,7 @@ Button.DeleteButton {
     Position = (300, 870);
     Renderer = &3;
     Size = (100, 41);
-    Text = Delete;
+    Text = "Delete";
     TextSize = 13;
 }
 
