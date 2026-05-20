@@ -194,7 +194,6 @@ Panel.BgPanel {
     }
 
     Button.SaveButton {
-        Enabled = false;
         Position = (10, 660);
         Renderer = &3;
         Size = (160, 41);
@@ -203,7 +202,6 @@ Panel.BgPanel {
     }
 
     Button.ResetButton {
-        Enabled = false;
         Position = (200, 660);
         Renderer = &3;
         Size = (160, 41);
@@ -248,7 +246,7 @@ Button.DeleteButton {
     Position = (300, 870);
     Renderer = &3;
     Size = (100, 41);
-    Text = "Delete";
+    Text = Delete;
     TextSize = 13;
 }
 
