@@ -64,11 +64,14 @@ std::string currentId = "";
 
 json* getJsonNodeFromPath(json& root, const std::vector<tgui::String>& path)
 {
+    if (!root.contains("dialogues") || path.empty())
+        return nullptr;
+
     json* current = nullptr;
 
     for (auto& dialogue : root["dialogues"])
     {
-        if (dialogue["id"] == path[0].toStdString())
+        if (dialogue.value("id", "") == path[0].toStdString())
         {
             current = &dialogue;
             break;
@@ -80,46 +83,24 @@ json* getJsonNodeFromPath(json& root, const std::vector<tgui::String>& path)
     for (size_t i = 1; i < path.size(); i++)
     {
         std::string key = path[i].toStdString();
+        bool found = false;
 
-        if (current->contains("texts"))
+        for (const char* arr : { "texts", "choices" })
         {
-            for (auto& t : (*current)["texts"])
+            if (!current->contains(arr)) continue;
+            for (auto& item : (*current)[arr])
             {
-                if (t["id"] == key)
+                if (item.value("id", "") == key)
                 {
-                    current = &t;
-                    goto next;
+                    current = &item;
+                    found = true;
+                    break;
                 }
             }
+            if (found) break;
         }
 
-        if (current->contains("choices"))
-        {
-            for (auto& c : (*current)["choices"])
-            {
-                if (c["text"] == key)
-                {
-                    current = &c;
-                    goto next;
-                }
-            }
-        }
-
-        if (current->contains("children"))
-        {
-            for (auto& c : (*current)["children"])
-            {
-                if (c["id"] == key || c["text"] == key)
-                {
-                    current = &c;
-                    goto next;
-                }
-            }
-        }
-
-        return nullptr;
-
-    next:;
+        if (!found) return nullptr;
     }
 
     return current;
@@ -130,8 +111,8 @@ std::string determineNodeType(const std::vector<tgui::String>& path)
     json* node = getJsonNodeFromPath(g_dialogueData, path);
     if (!node) return "";
 
-    if (node->contains("texts")) return "Dialogue";
-    if (node->contains("id")) return "Text";
+    if (path.size() == 1)        return "Dialogue";
+    if (node->contains("portrait")) return "Text";
     return "Choice";
 }
 
@@ -194,44 +175,46 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
     auto path = tree->getSelectedItem();
     if (path.empty()) return;
 
-    json* parent = getJsonNodeFromPath(g_dialogueData, path);
-    if (!parent) return;
+    json* selected = getJsonNodeFromPath(g_dialogueData, path);
+    if (!selected) return;
 
     std::string type = determineNodeType(path);
 
-    json newNode;
+    std::vector<tgui::String> parentPath = path;
+    json* parent = nullptr;
 
-    if (type == "Dialogue")
+    if (type == "Text")
     {
-        std::string id = idPrefix + std::to_string(std::rand() % 100000);
-
-        newNode = {
-            {"id", id},
-            {"portrait", portrait},
-            {"text", text}
-        };
-
-        (*parent)["texts"].push_back(newNode);
-
-        path.push_back(id);
-        tree->addItem(path);
-        tree->selectItem(path);
+        // Add as sibling — go up to parent
+        parentPath.pop_back();
+        parent = parentPath.empty()
+            ? nullptr
+            : getJsonNodeFromPath(g_dialogueData, parentPath);
     }
-    else if (type == "Text")
+    else
     {
-        std::string choiceText = "New Choice";
-
-        newNode = {
-            {"text", choiceText},
-            {"children", json::array()}
-        };
-
-        (*parent)["choices"].push_back(newNode);
-
-        path.push_back(choiceText);
-        tree->addItem(path);
-        tree->selectItem(path);
+        // Dialogue or Choice — add as child
+        parent = selected;
     }
+
+    if (!parent) return;
+
+    if (!parent->contains("texts"))
+        (*parent)["texts"] = json::array();
+
+    std::string id = idPrefix + std::to_string(std::rand() % 100000);
+
+    json newNode = {
+        {"id",      id},
+        {"portrait",portrait},
+        {"text",    text}
+    };
+
+    (*parent)["texts"].push_back(newNode);
+
+    parentPath.push_back(id);
+    tree->addItem(parentPath);
+    tree->selectItem(parentPath);
 }
 
 int main()
@@ -351,26 +334,32 @@ int main()
     gui.get<tgui::Button>("AddChoiceButton")->onPress([]() {
 
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto context = tree->getSelectedItem();
-        if (context.empty()) return;
+        auto path = tree->getSelectedItem();
+        if (path.empty()) return;
 
-        int index = tree->getItemIndexInParent(context);
-
-        std::string choiceText = "New Choice";
-        int i = 1;
-        while (std::find(dialogueIds.begin(), dialogueIds.end(), choiceText) != dialogueIds.end()) {
-            choiceText = "New Choice" + std::to_string(i);
-            i++;
-        }
-
-        std::string nodeType = determineNodeType(context);
+        std::string nodeType = determineNodeType(path);
         if (nodeType != "Text") return;
 
-        context.push_back(choiceText);
-        tree->addItem(context);
-        tree->setItemIndexInParent(context, index + 1);
-        tree->selectItem(context);
-        tree->getVerticalScrollbar()->setValue(tree->getVerticalScrollbar()->getMaxValue());
+        json* parent = getJsonNodeFromPath(g_dialogueData, path);
+        if (!parent) return;
+
+        if (!parent->contains("choices"))
+            (*parent)["choices"] = json::array();
+
+        std::string id = "CHOICE_" + std::to_string(std::rand() % 100000);
+
+        json newChoice = {
+            {"id", id},
+            {"text", "New Choice"},
+            {"texts", json::array()}
+        };
+
+        (*parent)["choices"].push_back(newChoice);
+
+        path.push_back(id);
+
+        tree->addItem(path);
+        tree->selectItem(path);
         });
 
     gui.get<tgui::Button>("DeleteButton")->onPress([]() {
