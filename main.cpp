@@ -118,12 +118,9 @@ std::string determineNodeType(const std::vector<tgui::String>& path)
 
 void processJsonNode(const json& node, std::vector<tgui::String> path, tgui::TreeView::Ptr tree)
 {
-    std::string label;
+    if (!node.contains("id")) return;
 
-    if (node.contains("texts"))       label = node["id"];
-    else if (node.contains("id"))     label = node["id"];
-    else                              label = node["text"];
-
+    std::string label = node.value("id", "");
     path.push_back(label);
     tree->addItem(path);
 
@@ -133,10 +130,6 @@ void processJsonNode(const json& node, std::vector<tgui::String> path, tgui::Tre
 
     if (node.contains("choices"))
         for (const auto& c : node["choices"])
-            processJsonNode(c, path, tree);
-
-    if (node.contains("children"))
-        for (const auto& c : node["children"])
             processJsonNode(c, path, tree);
 }
 
