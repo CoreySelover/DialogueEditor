@@ -415,19 +415,87 @@ int main()
 
     gui.get<tgui::Button>("MoveUpButton")->onPress([]() {
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto selectedItem = tree->getSelectedItem();
-        if (selectedItem.empty()) return;
-        int index = tree->getItemIndexInParent(selectedItem);
-        if (index > 0)
-            tree->setItemIndexInParent(selectedItem, index - 1);
+        auto path = tree->getSelectedItem();
+        if (path.empty()) return;
+
+        int index = tree->getItemIndexInParent(path);
+        if (index <= 0) return;
+
+        // Move in tree
+        tree->setItemIndexInParent(path, index - 1);
+
+        // Mirror in JSON
+        if (path.size() == 1)
+        {
+            auto& arr = g_dialogueData["dialogues"];
+            if (index < (int)arr.size())
+                std::swap(arr[index], arr[index - 1]);
+        }
+        else
+        {
+            std::vector<tgui::String> parentPath = path;
+            parentPath.pop_back();
+            json* parent = getJsonNodeFromPath(g_dialogueData, parentPath);
+            if (!parent) return;
+
+            std::string id = path.back().toStdString();
+
+            for (const char* key : { "texts", "choices" })
+            {
+                if (!parent->contains(key)) continue;
+                auto& arr = (*parent)[key];
+                for (int i = 0; i < (int)arr.size(); i++)
+                {
+                    if (arr[i].value("id", "") == id && i > 0)
+                    {
+                        std::swap(arr[i], arr[i - 1]);
+                        break;
+                    }
+                }
+            }
+        }
         });
 
     gui.get<tgui::Button>("MoveDownButton")->onPress([]() {
         auto tree = gui.get<tgui::TreeView>("DialogueTree");
-        auto selectedItem = tree->getSelectedItem();
-        if (selectedItem.empty()) return;
-        int index = tree->getItemIndexInParent(selectedItem);
-        tree->setItemIndexInParent(selectedItem, index + 1);
+        auto path = tree->getSelectedItem();
+        if (path.empty()) return;
+
+        int index = tree->getItemIndexInParent(path);
+
+        // Move in tree
+        tree->setItemIndexInParent(path, index + 1);
+
+        // Mirror in JSON
+        if (path.size() == 1)
+        {
+            auto& arr = g_dialogueData["dialogues"];
+            if (index + 1 < (int)arr.size())
+                std::swap(arr[index], arr[index + 1]);
+        }
+        else
+        {
+            std::vector<tgui::String> parentPath = path;
+            parentPath.pop_back();
+            json* parent = getJsonNodeFromPath(g_dialogueData, parentPath);
+            if (!parent) return;
+
+            std::string id = path.back().toStdString();
+
+            for (const char* key : { "texts", "choices" })
+            {
+                if (!parent->contains(key)) continue;
+                auto& arr = (*parent)[key];
+                for (int i = 0; i < (int)arr.size(); i++)
+                {
+                    if (arr[i].value("id", "") == id && i + 1 < (int)arr.size())
+                    {
+                        std::swap(arr[i], arr[i + 1]);
+                        break;
+                    }
+                }
+            }
+        }
         });
 
     // -----------------------------------------------------------------------
