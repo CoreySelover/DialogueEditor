@@ -178,7 +178,6 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
 
     if (type == "Text")
     {
-        // Add as sibling — go up to parent
         parentPath.pop_back();
         parent = parentPath.empty()
             ? nullptr
@@ -186,7 +185,6 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
     }
     else
     {
-        // Dialogue or Choice — add as child
         parent = selected;
     }
 
@@ -195,7 +193,9 @@ void onButtonPress(const std::string& idPrefix, const std::string& portrait, con
     if (!parent->contains("texts"))
         (*parent)["texts"] = json::array();
 
-    std::string id = idPrefix + std::to_string(std::rand() % 100000);
+    std::string dialogueName = path[0].toStdString();
+    int count = (int)(*parent)["texts"].size();
+    std::string id = dialogueName + "_" + idPrefix + "_" + std::to_string(count);
 
     json newNode = {
         {"id",      id},
