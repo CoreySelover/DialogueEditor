@@ -283,7 +283,6 @@ int main()
         {
             std::string newText = gui.get<tgui::TextArea>("TextArea")->getText().toStdString();
             (*node)["text"] = newText;
-            tree->changeItem(path, newText);
         }
         else if (type == "Dialogue")
         {
@@ -330,8 +329,8 @@ int main()
         auto path = tree->getSelectedItem();
         if (path.empty()) return;
 
-        std::string nodeType = determineNodeType(path);
-        if (nodeType != "Text") return;
+        std::string parentNodeType = determineNodeType(path);
+        if (parentNodeType != "Text") return;
 
         json* parent = getJsonNodeFromPath(g_dialogueData, path);
         if (!parent) return;
